@@ -43,7 +43,7 @@ public class NetworkImageView extends ImageView {
      */
     private int mErrorImageId;
 
-    /** Local copy of the ImageLoader. */
+    /** Local copy of the ImageLoader. 通过这个对象去获取图片*/
     private ImageLoader mImageLoader;
 
     /** Current ImageContainer. (either in-flight or finished) */

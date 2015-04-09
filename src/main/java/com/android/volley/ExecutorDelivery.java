@@ -21,14 +21,15 @@ import android.os.Handler;
 import java.util.concurrent.Executor;
 
 /**
- * Delivers responses and errors.
+ * Delivers responses and errors.   执行已提交的runnable任务的对象，此接口提供一种将任务提交与每个任务将如何运行的机制
+ * 包括线程使用的细节 调度等分离开来的方法 ，在线池中经常用到。
  */
 public class ExecutorDelivery implements ResponseDelivery {
     /** Used for posting responses, typically to the main thread. */
     private final Executor mResponsePoster;
 
     /**
-     * Creates a new response delivery interface.
+     * Creates a new response delivery interface. 传入了一个Handle，是运行在主线程的Handle
      * @param handler {@link Handler} to post responses on
      */
     public ExecutorDelivery(final Handler handler) {

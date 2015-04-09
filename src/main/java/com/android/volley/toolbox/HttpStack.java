@@ -26,6 +26,7 @@ import java.util.Map;
 
 /**
  * An HTTP stack abstraction.
+ * 一个借口 有两个实现类，HurlStack (HttpClient)   HttpClientStack  (HttpURLConnection)
  */
 public interface HttpStack {
     /**

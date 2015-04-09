@@ -27,9 +27,13 @@ import com.android.volley.RequestQueue;
 
 import java.io.File;
 
+/**
+ * 这个类主要用于创建一个请求队列，创建后调用start会启动线程，不断监听里面是否有请求
+ */
 public class Volley {
-
-    /** Default on-disk cache directory. */
+    /** Default on-disk cache directory.
+     * 缓存目录
+     * */
     private static final String DEFAULT_CACHE_DIR = "volley";
 
     /**
@@ -40,10 +44,11 @@ public class Volley {
      * @param stack An {@link HttpStack} to use for the network, or null for default.
      * @param maxDiskCacheBytes the maximum size of the disk cache, in bytes. Use -1 for default size.
      * @return A started {@link RequestQueue} instance.
+     *
+     * 创建一个默认请求队列，请求创建后，放在这个队列里面
      */
     public static RequestQueue newRequestQueue(Context context, HttpStack stack, int maxDiskCacheBytes) {
-        File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
-
+        File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);//缓存位置
         String userAgent = "volley/0";
         try {
             String packageName = context.getPackageName();
@@ -61,10 +66,10 @@ public class Volley {
                 stack = new HttpClientStack(AndroidHttpClient.newInstance(userAgent));
             }
         }
-
-        Network network = new BasicNetwork(stack);
-        
+        Network network = new BasicNetwork(stack);//建立网络请求类，使用stack进行网络请求
         RequestQueue queue;
+
+        //创建请求队列，传入缓存目录和网络请求
         if (maxDiskCacheBytes <= -1)
         {
         	// No maximum size specified
@@ -76,8 +81,7 @@ public class Volley {
         	queue = new RequestQueue(new DiskBasedCache(cacheDir, maxDiskCacheBytes), network);
         }
 
-        queue.start();
-
+        queue.start();//启动请求队列，其实就是启动一些线程，不断监听是否有请求
         return queue;
     }
     

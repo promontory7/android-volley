@@ -27,9 +27,9 @@ class InternalUtils {
     public static String sha1Hash(String text) {
         String hash = null;
         try {
-            final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            final MessageDigest digest = MessageDigest.getInstance("SHA-1");//为应用程序提供信息摘要算法功能，例如MD5 SHA。用于生成散列码
             final byte[] bytes = text.getBytes("UTF-8");
-            digest.update(bytes, 0, bytes.length);
+            digest.update(bytes, 0, bytes.length);//处理数据，即更新摘要。
             hash = convertToHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();

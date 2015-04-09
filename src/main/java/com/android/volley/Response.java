@@ -38,13 +38,13 @@ public class Response<T> {
         public void onErrorResponse(VolleyError error);
     }
 
-    /** Returns a successful response containing the parsed result. */
+    /** Returns a successful response containing the parsed result.成功的时候创建 */
     public static <T> Response<T> success(T result, Cache.Entry cacheEntry) {
         return new Response<T>(result, cacheEntry);
     }
 
     /**
-     * Returns a failed response containing the given error code and an optional
+     * Returns a failed response containing the given error code and an optional失败的时候创建
      * localized message displayed to the user.
      */
     public static <T> Response<T> error(VolleyError error) {

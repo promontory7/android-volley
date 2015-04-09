@@ -33,11 +33,11 @@ import java.util.concurrent.BlockingQueue;
  * errors are posted back to the caller via a {@link ResponseDelivery}.
  */
 public class NetworkDispatcher extends Thread {
-    /** The queue of requests to service. */
+    /** The queue of requests to service.网络队列 */
     private final BlockingQueue<Request<?>> mQueue;
-    /** The network interface for processing requests. */
+    /** The network interface for processing requests.网络请求 */
     private final Network mNetwork;
-    /** The cache to write to. */
+    /** The cache to write to. 网络请求后，放入的缓存*/
     private final Cache mCache;
     /** For posting responses and errors. */
     private final ResponseDelivery mDelivery;
@@ -112,7 +112,7 @@ public class NetworkDispatcher extends Thread {
                 NetworkResponse networkResponse = mNetwork.performRequest(request);
                 request.addMarker("network-http-complete");
 
-                // If the server returned 304 AND we delivered a response already,
+                // If the server returned 304 AND we delivered a response already,如果已经把返回结果发给UI
                 // we're done -- don't deliver a second identical response.
                 if (networkResponse.notModified && request.hasHadResponseDelivered()) {
                     request.finish("not-modified");
@@ -123,16 +123,16 @@ public class NetworkDispatcher extends Thread {
                 Response<?> response = request.parseNetworkResponse(networkResponse);
                 request.addMarker("network-parse-complete");
 
-                // Write to cache if applicable.
+                // Write to cache if applicable.如果需要缓存，则将结果存入缓存中
                 // TODO: Only update cache metadata instead of entire record for 304s.
                 if (request.shouldCache() && response.cacheEntry != null) {
                     mCache.put(request.getCacheKey(), response.cacheEntry);
                     request.addMarker("network-cache-written");
                 }
 
-                // Post the response back.
+                // Post the response back.标记为已经发送
                 request.markDelivered();
-                mDelivery.postResponse(request, response);
+                mDelivery.postResponse(request, response);//将数据发送给UI线程
             } catch (VolleyError volleyError) {
                 volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);
                 parseAndDeliverNetworkError(request, volleyError);

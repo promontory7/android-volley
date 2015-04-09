@@ -81,7 +81,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /** Listener interface for errors. */
     private final Response.ErrorListener mErrorListener;
 
-    /** Sequence number of this request, used to enforce FIFO ordering. */
+    /** Sequence number of this request, used to enforce FIFO ordering.请求在队列中的顺序 */
     private Integer mSequence;
 
     /** The request queue this request is associated with. */
@@ -90,7 +90,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /** Whether or not responses to this request should be cached. */
     private boolean mShouldCache = true;
 
-    /** Whether or not this request has been canceled. */
+    /** Whether or not this request has been canceled. 网络和本地线程都会对这个进行判断，如果取消了就不请求*/
     private boolean mCanceled = false;
 
     /** Whether or not a response has been delivered for this request yet. */
@@ -102,7 +102,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /** Threshold at which we should log the request (even when debug logging is not enabled). */
     private static final long SLOW_REQUEST_THRESHOLD_MS = 3000;
 
-    /** The retry policy for this request. */
+    /** The retry policy for this request.设置最大重试次数 */
     private RetryPolicy mRetryPolicy;
 
     /**
@@ -586,7 +586,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Subclasses must implement this to perform delivery of the parsed
+     * Subclasses must implement this to perform delivery of the parsed    将response发送到UI
      * response to their listeners.  The given response is guaranteed to
      * be non-null; responses that fail to parse are not delivered.
      * @param response The parsed response returned by

@@ -38,15 +38,17 @@ import java.util.LinkedList;
  * {@link ImageLoader#getImageListener(ImageView, int, int)}. Note that all function calls to
  * this class must be made from the main thead, and all responses will be delivered to the main
  * thread as well.
+ *
+ * 通过调用ImageLoder的get方法可以获取到图片，然后通过一个Listener回调，将图片设置到ImageView中
  */
 public class ImageLoader {
-    /** RequestQueue for dispatching ImageRequests onto. */
+    /** RequestQueue for dispatching ImageRequests onto.请求队列 */
     private final RequestQueue mRequestQueue;
 
     /** Amount of time to wait after first response arrives before delivering all responses. */
     private int mBatchResponseDelayMs = 100;
 
-    /** The cache implementation to be used as an L1 cache before calling into volley. */
+    /** The cache implementation to be used as an L1 cache before calling into volley.  推按内存缓存 */
     private final ImageCache mCache;
 
     /**
@@ -93,6 +95,8 @@ public class ImageLoader {
      * @param view The imageView that the listener is associated with.
      * @param defaultImageResId Default image resource ID to use, or 0 if it doesn't exist.
      * @param errorImageResId Error image resource ID to use, or 0 if it doesn't exist.
+     *
+     * 用于图片获取成功或者失败的回调
      */
     public static ImageListener getImageListener(final ImageView view,
             final int defaultImageResId, final int errorImageResId) {
@@ -177,6 +181,8 @@ public class ImageLoader {
      * request is fulfilled.
      *
      * @param requestUrl The URL of the image to be loaded.
+     *
+     *                   获取图像
      */
     public ImageContainer get(String requestUrl, final ImageListener listener) {
         return get(requestUrl, listener, 0, 0);
@@ -228,22 +234,22 @@ public class ImageLoader {
         // Update the caller to let them know that they should use the default bitmap.
         imageListener.onResponse(imageContainer, true);
 
-        // Check to see if a request is already in-flight.
+        // Check to see if a request is already in-flight. 判断同一个KEY的请求是否已经存在
         BatchedImageRequest request = mInFlightRequests.get(cacheKey);
         if (request != null) {
-            // If it is, add this request to the list of listeners.
+            // If it is, add this request to the list of listeners.如果存在，则直接加入request中，没必要对一个key发送多个请求
             request.addContainer(imageContainer);
             return imageContainer;
         }
 
         // The request is not already in flight. Send the new request to the network and
-        // track it.
+        // track it.发送一个请求，并加入requestqueue中
         Request<Bitmap> newRequest = makeImageRequest(requestUrl, maxWidth, maxHeight, scaleType,
                 cacheKey);
 
         mRequestQueue.add(newRequest);
         mInFlightRequests.put(cacheKey,
-                new BatchedImageRequest(newRequest, imageContainer));
+                new BatchedImageRequest(newRequest, imageContainer));//加入到HashMap中，表明这个key已经存在一个请求
         return imageContainer;
     }
 
@@ -352,17 +358,17 @@ public class ImageLoader {
 
             BatchedImageRequest request = mInFlightRequests.get(mCacheKey);
             if (request != null) {
-                boolean canceled = request.removeContainerAndCancelIfNecessary(this);
+                boolean canceled = request.removeContainerAndCancelIfNecessary(this);//如果mContainers的size为0，那么下面这个方法返回true
                 if (canceled) {
                     mInFlightRequests.remove(mCacheKey);
                 }
             } else {
-                // check to see if it is already batched for delivery.
+                // check to see if it is already batched for delivery.//判断是否这个request已经成功返回了
                 request = mBatchedResponses.get(mCacheKey);
                 if (request != null) {
                     request.removeContainerAndCancelIfNecessary(this);
                     if (request.mContainers.size() == 0) {
-                        mBatchedResponses.remove(mCacheKey);
+                        mBatchedResponses.remove(mCacheKey);//如果返回成功了，并且没有ImageView对他感兴趣，那么删除
                     }
                 }
             }
@@ -386,6 +392,7 @@ public class ImageLoader {
     /**
      * Wrapper class used to map a Request to the set of active ImageContainer objects that are
      * interested in its results.
+     * 对Request的一个包装，将所有共同key的请求放入一个LinkedList中
      */
     private class BatchedImageRequest {
         /** The request being tracked */
@@ -397,7 +404,9 @@ public class ImageLoader {
         /** Error if one occurred for this response */
         private VolleyError mError;
 
-        /** List of all of the active ImageContainers that are interested in the request */
+        /** List of all of the active ImageContainers that are interested in the request
+         * 存放着具有共同key的ImageContainer
+         * */
         private final LinkedList<ImageContainer> mContainers = new LinkedList<ImageContainer>();
 
         /**
@@ -437,6 +446,7 @@ public class ImageLoader {
          * left listening.
          * @param container The container to remove from the list
          * @return True if the request was canceled, false otherwise.
+         * 移除一个ImageContainer，如果此时size==0，那么需要从mInFlightRequests中语出该BatchedImageRequest
          */
         public boolean removeContainerAndCancelIfNecessary(ImageContainer container) {
             mContainers.remove(container);
@@ -452,6 +462,8 @@ public class ImageLoader {
      * Starts the runnable for batched delivery of responses if it is not already started.
      * @param cacheKey The cacheKey of the response being delivered.
      * @param request The BatchedImageRequest to be delivered.
+     *
+     *当请求返回后，将BatchedImageRequest放入到mBatchRequeses，然后将结果发送给具有相同key的ImageContainer,ImageContainer通过Listener发送到ImageView，从而显示出来
      */
     private void batchResponse(String cacheKey, BatchedImageRequest request) {
         mBatchedResponses.put(cacheKey, request);

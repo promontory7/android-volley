@@ -42,7 +42,7 @@ public class CacheDispatcher extends Thread {
     /** The cache to read from. */
     private final Cache mCache;
 
-    /** For posting responses. */
+    /** For posting responses. 用于从子线程向UI发送数据*/
     private final ResponseDelivery mDelivery;
 
     /** Used for telling us to die. */
@@ -80,13 +80,13 @@ public class CacheDispatcher extends Thread {
         if (DEBUG) VolleyLog.v("start new dispatcher");
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 
-        // Make a blocking call to initialize the cache.
+        // Make a blocking call to initialize the cache.缓存初始化，将磁盘中的数据读入内存
         mCache.initialize();
 
         while (true) {
             try {
                 // Get a request from the cache triage queue, blocking until
-                // at least one is available.
+                // at least one is available.从队列中取出请求
                 final Request<?> request = mCacheQueue.take();
                 request.addMarker("cache-queue-take");
 
@@ -96,16 +96,16 @@ public class CacheDispatcher extends Thread {
                     continue;
                 }
 
-                // Attempt to retrieve this item from cache.
+                // Attempt to retrieve this item from cache. 从缓存中取出数据
                 Cache.Entry entry = mCache.get(request.getCacheKey());
                 if (entry == null) {
                     request.addMarker("cache-miss");
-                    // Cache miss; send off to the network dispatcher.
+                    // Cache miss; send off to the network dispatcher.没有命中，就将请求放入网络
                     mNetworkQueue.put(request);
                     continue;
                 }
 
-                // If it is completely expired, just send it to the network.
+                // If it is completely expired, just send it to the network. 如果已经过期，将请求放入网络队列
                 if (entry.isExpired()) {
                     request.addMarker("cache-hit-expired");
                     request.setCacheEntry(entry);
@@ -113,18 +113,18 @@ public class CacheDispatcher extends Thread {
                     continue;
                 }
 
-                // We have a cache hit; parse its data for delivery back to the request.
+                // We have a cache hit; parse its data for delivery back to the request. 本地命中
                 request.addMarker("cache-hit");
                 Response<?> response = request.parseNetworkResponse(
                         new NetworkResponse(entry.data, entry.responseHeaders));
                 request.addMarker("cache-hit-parsed");
 
                 if (!entry.refreshNeeded()) {
-                    // Completely unexpired cache hit. Just deliver the response.
+                    // Completely unexpired cache hit. Just deliver the response.命中并且不需要刷新
                     mDelivery.postResponse(request, response);
                 } else {
-                    // Soft-expired cache hit. We can deliver the cached response,
-                    // but we need to also send the request to the network for
+                    // Soft-expired cache hit. We can deliver the cached response,命中 需要刷新
+                    // but we need to also send the request to the network for将请求放入网络队列
                     // refreshing.
                     request.addMarker("cache-hit-refresh-needed");
                     request.setCacheEntry(entry);
