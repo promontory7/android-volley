@@ -26,6 +26,9 @@ import android.os.Looper;
 
 /**
  * A synthetic request used for clearing the cache.
+ * 用于人为清空http缓存的请求，
+ * 添加到RequestQueue后能很快的运行，因为优先级别很高，Priority.IMMEDIATE ，
+ * 并且清空缓存的方法写在isCancled（）方法体中，能很快的到运行
  */
 public class ClearCacheRequest extends Request<Object> {
     private final Cache mCache;

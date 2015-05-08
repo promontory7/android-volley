@@ -45,17 +45,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * An HttpStack that performs request over an {@link HttpClient}.
+ * 一个网络请求类基于  HttpClient
  */
 public class HttpClientStack implements HttpStack {
     protected final HttpClient mClient;
-
     private final static String HEADER_CONTENT_TYPE = "Content-Type";
-
     public HttpClientStack(HttpClient client) {
         mClient = client;
     }
-
     private static void addHeaders(HttpUriRequest httpRequest, Map<String, String> headers) {
         for (String key : headers.keySet()) {
             httpRequest.setHeader(key, headers.get(key));
@@ -71,6 +68,12 @@ public class HttpClientStack implements HttpStack {
         return result;
     }
 
+    /**
+     * 执行网络请求方法
+     *
+     * @param request           请求
+     * @param additionalHeaders 一些额外的消息头
+     */
     @Override
     public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
@@ -95,9 +98,7 @@ public class HttpClientStack implements HttpStack {
             Map<String, String> additionalHeaders) throws AuthFailureError {
         switch (request.getMethod()) {
             case Method.DEPRECATED_GET_OR_POST: {
-                // This is the deprecated way that needs to be handled for backwards compatibility.
-                // If the request's post body is null, then the assumption is that the request is
-                // GET.  Otherwise, it is assumed that the request is a POST.
+                //根据postbody选择GET或者POST方式
                 byte[] postBody = request.getPostBody();
                 if (postBody != null) {
                     HttpPost postRequest = new HttpPost(request.getUrl());
@@ -153,16 +154,14 @@ public class HttpClientStack implements HttpStack {
     }
 
     /**
-     * Called before the request is executed using the underlying HttpClient.
-     *
-     * <p>Overwrite in subclasses to augment the request.</p>
+     * 请求前调用
      */
     protected void onPrepareRequest(HttpUriRequest request) throws IOException {
         // Nothing.
     }
 
     /**
-     * The HttpPatch class does not exist in the Android framework, so this has been defined here.
+     * android框架里面没有HttpPatch类，在此定义
      */
     public static final class HttpPatch extends HttpEntityEnclosingRequestBase {
 

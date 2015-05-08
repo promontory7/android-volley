@@ -44,22 +44,19 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
- * An {@link HttpStack} based on {@link HttpURLConnection}.
+ * 一个网络请求类基于 HttpURLConnection
  */
 public class HurlStack implements HttpStack {
 
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
 
     /**
-     * An interface for transforming URLs before use.
+     * 一个接口用于使用URL前的转换
      */
     public interface UrlRewriter {
-        /**
-         * Returns a URL to use instead of the provided one, or null to indicate
-         * this URL should not be used at all.
-         */
         public String rewriteUrl(String originalUrl);
     }
+
 
     private final UrlRewriter mUrlRewriter;
     private final SSLSocketFactory mSslSocketFactory;
@@ -68,22 +65,27 @@ public class HurlStack implements HttpStack {
         this(null);
     }
 
-    /**
-     * @param urlRewriter Rewriter to use for request URLs
-     */
+
     public HurlStack(UrlRewriter urlRewriter) {
         this(urlRewriter, null);
     }
 
     /**
-     * @param urlRewriter Rewriter to use for request URLs
-     * @param sslSocketFactory SSL factory to use for HTTPS connections
+     * @param urlRewriter url转换类
+     * @param sslSocketFactory 使用HTTPS通信的 SSL Factory
      */
     public HurlStack(UrlRewriter urlRewriter, SSLSocketFactory sslSocketFactory) {
         mUrlRewriter = urlRewriter;
         mSslSocketFactory = sslSocketFactory;
     }
 
+
+    /**
+     * 执行网络请求方法
+     *
+     * @param request           请求
+     * @param additionalHeaders 一些额外的消息头
+     */
     @Override
     public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
@@ -103,13 +105,10 @@ public class HurlStack implements HttpStack {
         for (String headerName : map.keySet()) {
             connection.addRequestProperty(headerName, map.get(headerName));
         }
-        setConnectionParametersForRequest(connection, request);
-        // Initialize HttpResponse with data from the HttpURLConnection.
+        setConnectionParametersForRequest(connection, request);//为connection 设置请求方法，如get post
         ProtocolVersion protocolVersion = new ProtocolVersion("HTTP", 1, 1);
         int responseCode = connection.getResponseCode();
         if (responseCode == -1) {
-            // -1 is returned by getResponseCode() if the response code could not be retrieved.
-            // Signal to the caller that something was wrong with the connection.
             throw new IOException("Could not retrieve response code from HttpUrlConnection.");
         }
         StatusLine responseStatus = new BasicStatusLine(protocolVersion,
@@ -126,9 +125,7 @@ public class HurlStack implements HttpStack {
     }
 
     /**
-     * Initializes an {@link HttpEntity} from the given {@link HttpURLConnection}.
-     * @param connection
-     * @return an HttpEntity populated with data from <code>connection</code>.
+     * 根据HttpURLConnection获得消息实体
      */
     private static HttpEntity entityFromConnection(HttpURLConnection connection) {
         BasicHttpEntity entity = new BasicHttpEntity();
@@ -145,19 +142,12 @@ public class HurlStack implements HttpStack {
         return entity;
     }
 
-    /**
-     * Create an {@link HttpURLConnection} for the specified {@code url}.
-     */
+
     protected HttpURLConnection createConnection(URL url) throws IOException {
         return (HttpURLConnection) url.openConnection();
     }
 
-    /**
-     * Opens an {@link HttpURLConnection} with parameters.
-     * @param url
-     * @return an open connection
-     * @throws IOException
-     */
+
     private HttpURLConnection openConnection(URL url, Request<?> request) throws IOException {
         HttpURLConnection connection = createConnection(url);
 
@@ -167,7 +157,7 @@ public class HurlStack implements HttpStack {
         connection.setUseCaches(false);
         connection.setDoInput(true);
 
-        // use caller-provided custom SslSocketFactory, if any, for HTTPS
+        //   建立HTTPS连接
         if ("https".equals(url.getProtocol()) && mSslSocketFactory != null) {
             ((HttpsURLConnection)connection).setSSLSocketFactory(mSslSocketFactory);
         }
@@ -180,14 +170,10 @@ public class HurlStack implements HttpStack {
             Request<?> request) throws IOException, AuthFailureError {
         switch (request.getMethod()) {
             case Method.DEPRECATED_GET_OR_POST:
-                // This is the deprecated way that needs to be handled for backwards compatibility.
-                // If the request's post body is null, then the assumption is that the request is
-                // GET.  Otherwise, it is assumed that the request is a POST.
+
+                //根据PostBody选择get或者post方式
                 byte[] postBody = request.getPostBody();
                 if (postBody != null) {
-                    // Prepare output. There is no need to set Content-Length explicitly,
-                    // since this is handled by HttpURLConnection using the size of the prepared
-                    // output stream.
                     connection.setDoOutput(true);
                     connection.setRequestMethod("POST");
                     connection.addRequestProperty(HEADER_CONTENT_TYPE,
@@ -198,8 +184,7 @@ public class HurlStack implements HttpStack {
                 }
                 break;
             case Method.GET:
-                // Not necessary to set the request method because connection defaults to GET but
-                // being explicit here.
+                //这部可省略，默认使用GET方式
                 connection.setRequestMethod("GET");
                 break;
             case Method.DELETE:

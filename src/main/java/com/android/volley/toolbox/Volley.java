@@ -1,18 +1,4 @@
-/*
- * Copyright (C) 2012 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
 
 package com.android.volley.toolbox;
 
@@ -28,22 +14,21 @@ import com.android.volley.RequestQueue;
 import java.io.File;
 
 /**
- * 这个类主要用于创建一个请求队列，创建后调用start会启动线程，不断监听里面是否有请求
+ * 要用于创建一个请求队列，
+ * 创建后调用start会启动线程，不断监听里面是否有请求
+ *
  */
 public class Volley {
-    /** Default on-disk cache directory.
-     * 缓存目录
+    /**
+     * 默认缓存目录
      * */
     private static final String DEFAULT_CACHE_DIR = "volley";
 
     /**
-     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
-     * You may set a maximum size of the disk cache in bytes.
-     *
-     * @param context A {@link Context} to use for creating the cache dir.
-     * @param stack An {@link HttpStack} to use for the network, or null for default.
-     * @param maxDiskCacheBytes the maximum size of the disk cache, in bytes. Use -1 for default size.
-     * @return A started {@link RequestQueue} instance.
+     * @param context
+     * @param stack 网络请求方式
+     * @param maxDiskCacheBytes 最大缓存， -1表示默认大小
+     * @return 返回队列实例
      *
      * 创建一个默认请求队列，请求创建后，放在这个队列里面
      */
@@ -57,64 +42,42 @@ public class Volley {
         } catch (NameNotFoundException e) {
         }
 
+        //若网络请求方式为空，则根据API版本号选择更加合适的请求方式
+        //HurlStack 以 HttpURLConnection方式     HttpClientStack 以HttpClient方式
         if (stack == null) {
             if (Build.VERSION.SDK_INT >= 9) {
                 stack = new HurlStack();
             } else {
-                // Prior to Gingerbread, HttpUrlConnection was unreliable.
-                // See: http://android-developers.blogspot.com/2011/09/androids-http-clients.html
                 stack = new HttpClientStack(AndroidHttpClient.newInstance(userAgent));
             }
         }
-        Network network = new BasicNetwork(stack);//建立网络请求类，使用stack进行网络请求
+        Network network = new BasicNetwork(stack);//建立网络请求封装类，使用stack进行网络请求
         RequestQueue queue;
 
         //创建请求队列，传入缓存目录和网络请求
         if (maxDiskCacheBytes <= -1)
         {
-        	// No maximum size specified
         	queue = new RequestQueue(new DiskBasedCache(cacheDir), network);
         }
         else
         {
-        	// Disk cache size specified
         	queue = new RequestQueue(new DiskBasedCache(cacheDir, maxDiskCacheBytes), network);
         }
 
-        queue.start();//启动请求队列，其实就是启动一些线程，不断监听是否有请求
+        queue.start();//启动请求队列，请求队列会一直监听是否有请求加进来，有的话就执行
         return queue;
     }
-    
-    /**
-     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
-     * You may set a maximum size of the disk cache in bytes.
-     *
-     * @param context A {@link Context} to use for creating the cache dir.
-     * @param maxDiskCacheBytes the maximum size of the disk cache, in bytes. Use -1 for default size.
-     * @return A started {@link RequestQueue} instance.
-     */
+
+
     public static RequestQueue newRequestQueue(Context context, int maxDiskCacheBytes) {
         return newRequestQueue(context, null, maxDiskCacheBytes);
     }
     
-    /**
-     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
-     *
-     * @param context A {@link Context} to use for creating the cache dir.
-     * @param stack An {@link HttpStack} to use for the network, or null for default.
-     * @return A started {@link RequestQueue} instance.
-     */
     public static RequestQueue newRequestQueue(Context context, HttpStack stack)
     {
     	return newRequestQueue(context, stack, -1);
     }
     
-    /**
-     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
-     *
-     * @param context A {@link Context} to use for creating the cache dir.
-     * @return A started {@link RequestQueue} instance.
-     */
     public static RequestQueue newRequestQueue(Context context) {
         return newRequestQueue(context, null);
     }

@@ -21,23 +21,29 @@ import android.os.Handler;
 import java.util.concurrent.Executor;
 
 /**
- * Delivers responses and errors.   执行已提交的runnable任务的对象，此接口提供一种将任务提交与每个任务将如何运行的机制
+ * Delivers responses and errors.
+ * 执行已提交的runnable任务的对象，此接口提供一种将任务提交与每个任务将如何运行的机制
  * 包括线程使用的细节 调度等分离开来的方法 ，在线池中经常用到。
+ *
+ * 请求结果的传输类实现
+ * 在Handle对应线程中传输缓存调度线程或者网络调度线程中产生的请求结果或请求错误，
+ * 会在请求成功的情况下调用Request.deliverResponse()函数，失败时调用Request.deliverError()函数
  */
 public class ExecutorDelivery implements ResponseDelivery {
     /** Used for posting responses, typically to the main thread. */
     private final Executor mResponsePoster;
 
     /**
-     * Creates a new response delivery interface. 传入了一个Handle，是运行在主线程的Handle
+     * Creates a new response delivery interface.
+     * 传入了一个Handle，是运行在主线程的Handle
      * @param handler {@link Handler} to post responses on
      */
     public ExecutorDelivery(final Handler handler) {
-        // Make an Executor that just wraps the handler.
+        // Make an Executor that just wraps the handler.线程池
         mResponsePoster = new Executor() {
             @Override
             public void execute(Runnable command) {
-                handler.post(command);
+                handler.post(command);//相当于command的代码是在主线程运行的
             }
         };
     }

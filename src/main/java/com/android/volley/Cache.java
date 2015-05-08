@@ -1,39 +1,20 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley;
 
 import java.util.Collections;
 import java.util.Map;
 
 /**
- * An interface for a cache keyed by a String with a byte array as data.
+ *获取请求结果 存储请求结果的缓存
  */
 public interface Cache {
+
     /**
-     * Retrieves an entry from the cache.
-     * @param key Cache key
-     * @return An {@link Entry} or null in the event of a cache miss
+     * 获取请求的缓存实体
      */
     public Entry get(String key);
 
     /**
-     * Adds or replaces an entry to the cache.
-     * @param key Cache key
-     * @param entry Data to store and metadata for cache coherency, TTL, etc.
+     * 存储缓存实体
      */
     public void put(String key, Entry entry);
 
@@ -65,33 +46,39 @@ public interface Cache {
      * Data and metadata for an entry returned by the cache.
      */
     public static class Entry {
-        /** The data returned from cache. */
+        /**
+         * 数据
+         */
         public byte[] data;
 
-        /** ETag for cache coherency. */
+        /**
+         * http响应首部中用于缓存新鲜度验证的ETag
+         */
         public String etag;
 
-        /** Date of this response as reported by the server. */
+        /**
+         * http响应首部中响应产生的时间
+         */
         public long serverDate;
 
-        /** The last modified date for the requested object. */
+        /** 最后修改的时间 */
         public long lastModified;
 
-        /** TTL for this record. */
+        /** 缓存的过期时间*/
         public long ttl;
 
-        /** Soft TTL for this record. */
+        /**  缓存的新鲜时间*/
         public long softTtl;
 
-        /** Immutable response headers as received from server; must be non-null. */
+        /** 响应的Headers */
         public Map<String, String> responseHeaders = Collections.emptyMap();
 
-        /** True if the entry is expired. */
+        /** 缓存是否过期 */
         public boolean isExpired() {
             return this.ttl < System.currentTimeMillis();
         }
 
-        /** True if a refresh is needed from the original data source. */
+        /**  判断是否新鲜 */
         public boolean refreshNeeded() {
             return this.softTtl < System.currentTimeMillis();
         }

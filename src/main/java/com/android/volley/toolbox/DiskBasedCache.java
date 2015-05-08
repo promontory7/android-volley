@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley.toolbox;
 
 import android.os.SystemClock;
@@ -37,54 +21,52 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Cache implementation that caches files directly onto the hard disk in the specified
- * directory. The default disk usage size is 5MB, but is configurable.
+ * 基于Disk的Cache实现类 默认大小5MB
  */
 public class DiskBasedCache implements Cache {
 
-    /** Map of the Key, CacheHeader pairs */
     private final Map<String, CacheHeader> mEntries =
-            new LinkedHashMap<String, CacheHeader>(16, .75f, true);
+            new LinkedHashMap<String, CacheHeader>(16, .75f, true);//相对于HashMap，保存了数据的插入顺序
 
-    /** Total amount of space currently used by the cache in bytes. */
+    /**
+     * 当前使用的缓存大小
+     */
     private long mTotalSize = 0;
 
-    /** The root directory to use for the cache. */
+    /**
+     * 缓存目录
+     */
     private final File mRootDirectory;
 
-    /** The maximum size of the cache in bytes. */
+    /**
+     * 最大缓存大小.
+     */
     private final int mMaxCacheSizeInBytes;
 
-    /** Default maximum disk usage in bytes. */
+    /** 默认最大缓存大小 */
     private static final int DEFAULT_DISK_USAGE_BYTES = 5 * 1024 * 1024;
 
-    /** High water mark percentage for the cache */
     private static final float HYSTERESIS_FACTOR = 0.9f;
 
     /** Magic number for current version of cache file format. */
     private static final int CACHE_MAGIC = 0x20150306;
 
     /**
-     * Constructs an instance of the DiskBasedCache at the specified directory.
-     * @param rootDirectory The root directory of the cache.
-     * @param maxCacheSizeInBytes The maximum size of the cache in bytes.
+     * 创建一个缓存实例
+     * @param rootDirectory 缓存目录
+     * @param maxCacheSizeInBytes 最大缓存大小
      */
     public DiskBasedCache(File rootDirectory, int maxCacheSizeInBytes) {
         mRootDirectory = rootDirectory;
         mMaxCacheSizeInBytes = maxCacheSizeInBytes;
     }
 
-    /**
-     * Constructs an instance of the DiskBasedCache at the specified directory using
-     * the default maximum cache size of 5MB.
-     * @param rootDirectory The root directory of the cache.
-     */
     public DiskBasedCache(File rootDirectory) {
         this(rootDirectory, DEFAULT_DISK_USAGE_BYTES);
     }
 
     /**
-     * Clears the cache. Deletes all cached files from disk.
+     * 清空缓存
      */
     @Override
     public synchronized void clear() {
@@ -100,12 +82,12 @@ public class DiskBasedCache implements Cache {
     }
 
     /**
-     * Returns the cache entry with the specified key if it exists, null otherwise.
+     * 从缓存中得到数据
+     * 先从摘要信息中得到这个摘要信息，然后读取缓存数据文件得到内容
      */
     @Override
     public synchronized Entry get(String key) {
         CacheHeader entry = mEntries.get(key);
-        // if the entry does not exist, return.
         if (entry == null) {
             return null;
         }
@@ -114,7 +96,7 @@ public class DiskBasedCache implements Cache {
         CountingInputStream cis = null;
         try {
             cis = new CountingInputStream(new FileInputStream(file));
-            CacheHeader.readHeader(cis); // eat header
+            CacheHeader.readHeader(cis);
             byte[] data = streamToBytes(cis, (int) (file.length() - cis.bytesRead));
             return entry.toCacheEntry(data);
         } catch (IOException e) {
@@ -139,6 +121,7 @@ public class DiskBasedCache implements Cache {
     /**
      * Initializes the DiskBasedCache by scanning for all files currently in the
      * specified root directory. Creates the root directory if necessary.
+     * 初始化，扫描缓存目录得到所有缓存数据摘要信息放入内存
      */
     @Override
     public synchronized void initialize() {
@@ -194,9 +177,12 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Puts the entry with the specified key into the cache.
+     * 将数据存入缓存内
+     * 先检查缓存是否会满，会则先删除缓存中部分数据，然后再新建缓存文件
      */
     @Override
     public synchronized void put(String key, Entry entry) {
+        //检查是否能再分配neededSpace字节的空间，如果不能则删除缓存中部分数据，然后再新建缓存文件
         pruneIfNeeded(entry.data.length);
         File file = getFileForKey(key);
         try {
@@ -245,17 +231,11 @@ public class DiskBasedCache implements Cache {
         return localFilename;
     }
 
-    /**
-     * Returns a file object for the given cache key.
-     */
     public File getFileForKey(String key) {
         return new File(mRootDirectory, getFilenameForKey(key));
     }
 
-    /**
-     * Prunes the cache to fit the amount of bytes specified.
-     * @param neededSpace The amount of bytes we are trying to fit into the cache.
-     */
+
     private void pruneIfNeeded(int neededSpace) {
         if ((mTotalSize + neededSpace) < mMaxCacheSizeInBytes) {
             return;
@@ -267,7 +247,6 @@ public class DiskBasedCache implements Cache {
         long before = mTotalSize;
         int prunedFiles = 0;
         long startTime = SystemClock.elapsedRealtime();
-
         Iterator<Map.Entry<String, CacheHeader>> iterator = mEntries.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, CacheHeader> entry = iterator.next();
@@ -319,9 +298,7 @@ public class DiskBasedCache implements Cache {
         }
     }
 
-    /**
-     * Reads the contents of an InputStream into a byte[].
-     * */
+
     private static byte[] streamToBytes(InputStream in, int length) throws IOException {
         byte[] bytes = new byte[length];
         int count;
@@ -337,41 +314,19 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Handles holding onto the cache headers for an entry.
+     * 缓存文件摘要信息，存储在缓存文件的头部，与Cache.Entry相似
      */
-    // Visible for testing.
     static class CacheHeader {
-        /** The size of the data identified by this CacheHeader. (This is not
-         * serialized to disk. */
         public long size;
-
-        /** The key that identifies the cache entry. */
         public String key;
-
-        /** ETag for cache coherence. */
         public String etag;
-
-        /** Date of this response as reported by the server. */
         public long serverDate;
-
-        /** The last modified date for the requested object. */
         public long lastModified;
-
-        /** TTL for this record. */
         public long ttl;
-
-        /** Soft TTL for this record. */
         public long softTtl;
-
-        /** Headers from the response resulting in this cache entry. */
         public Map<String, String> responseHeaders;
-
         private CacheHeader() { }
 
-        /**
-         * Instantiates a new CacheHeader object
-         * @param key The key that identifies the cache entry
-         * @param entry The cache entry.
-         */
         public CacheHeader(String key, Entry entry) {
             this.key = key;
             this.size = entry.data.length;
@@ -392,7 +347,6 @@ public class DiskBasedCache implements Cache {
             CacheHeader entry = new CacheHeader();
             int magic = readInt(is);
             if (magic != CACHE_MAGIC) {
-                // don't bother deleting, it'll get pruned eventually
                 throw new IOException();
             }
             entry.key = readString(is);

@@ -22,6 +22,10 @@ import java.io.IOException;
 /**
  * A variation of {@link java.io.ByteArrayOutputStream} that uses a pool of byte[] buffers instead
  * of always allocating them fresh, saving on heap churn.
+ * 原始ByteArrayOutputStream中用于接受写入bytes的buf，每次空间不足时就会new更大的空间的byte[]
+ * 而PoolingByteArrayOutputStream使用ByteArrayPool作为byte[]缓存来减少这种操作，从而提高性能
+ *
+ * ByteArrayOutputStream类是byte型的内存缓冲区，在网络传输中，往往有许多的变量，中途可以用这个类把所有变量收集在一起，然后再把它一次性发送出去
  */
 public class PoolingByteArrayOutputStream extends ByteArrayOutputStream {
     /**

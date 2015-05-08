@@ -25,20 +25,19 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * An HTTP stack abstraction.
- * 一个借口 有两个实现类，HurlStack (HttpClient)   HttpClientStack  (HttpURLConnection)
+ * HTTP 网络请求抽象类
+ * 有两个实现类，HurlStack (HttpClient)    HttpClientStack  (HttpURLConnection)
  */
 public interface HttpStack {
     /**
-     * Performs an HTTP request with the given parameters.
+     * 用于执行HTTP请求
      *
      * <p>A GET request is sent if request.getPostBody() == null. A POST request is sent otherwise,
      * and the Content-Type header is set to request.getPostBodyContentType().</p>
      *
-     * @param request the request to perform
-     * @param additionalHeaders additional headers to be sent together with
-     *         {@link Request#getHeaders()}
-     * @return the HTTP response
+     * @param request 请求
+     * @param additionalHeaders 一些额外的消息头
+     * @return
      */
     public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
         throws IOException, AuthFailureError;

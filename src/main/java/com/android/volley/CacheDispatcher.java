@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley;
 
 import android.os.Process;
@@ -21,41 +5,42 @@ import android.os.Process;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Provides a thread for performing cache triage on a queue of requests.
- *
- * Requests added to the specified cache queue are resolved from cache.
- * Any deliverable response is posted back to the caller via a
- * {@link ResponseDelivery}.  Cache misses and responses that require
- * refresh are enqueued on the specified network queue for processing
- * by a {@link NetworkDispatcher}.
+ * 本地线程
  */
 public class CacheDispatcher extends Thread {
 
     private static final boolean DEBUG = VolleyLog.DEBUG;
 
-    /** The queue of requests coming in for triage. */
+    /**
+     * T
+     * 本地队列，从RequestQueue中传递进来
+     */
     private final BlockingQueue<Request<?>> mCacheQueue;
 
-    /** The queue of requests going out to the network. */
+    /**
+     * 网络请求队列，当本地队列没有命中的时候，需要把本地队列加入到网络队列
+     */
     private final BlockingQueue<Request<?>> mNetworkQueue;
 
-    /** The cache to read from. */
+    /**
+     * 磁盘缓存
+     */
     private final Cache mCache;
 
-    /** For posting responses. 用于从子线程向UI发送数据*/
+    /**
+     * 用于从子线程向UI发送数据
+     */
     private final ResponseDelivery mDelivery;
 
-    /** Used for telling us to die. */
     private volatile boolean mQuit = false;
 
     /**
-     * Creates a new cache triage dispatcher thread.  You must call {@link #start()}
-     * in order to begin processing.
+     *用于创建一个本地线程
      *
-     * @param cacheQueue Queue of incoming requests for triage
-     * @param networkQueue Queue to post requests that require network to
-     * @param cache Cache interface to use for resolution
-     * @param delivery Delivery interface to use for posting responses
+     * @param cacheQueue 本地队列
+     * @param networkQueue 网络请求队列
+     * @param cache 磁盘缓存
+     * @param delivery 请求结果发送到UI线程
      */
     public CacheDispatcher(
             BlockingQueue<Request<?>> cacheQueue, BlockingQueue<Request<?>> networkQueue,
@@ -67,8 +52,7 @@ public class CacheDispatcher extends Thread {
     }
 
     /**
-     * Forces this dispatcher to quit immediately.  If any requests are still in
-     * the queue, they are not guaranteed to be processed.
+     * 中断
      */
     public void quit() {
         mQuit = true;
@@ -80,13 +64,13 @@ public class CacheDispatcher extends Thread {
         if (DEBUG) VolleyLog.v("start new dispatcher");
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 
-        // Make a blocking call to initialize the cache.缓存初始化，将磁盘中的数据读入内存
+        // 缓存初始化，将磁盘中的数据读入内存
         mCache.initialize();
 
         while (true) {
             try {
                 // Get a request from the cache triage queue, blocking until
-                // at least one is available.从队列中取出请求
+                // at least one is available.从本地队列中取出请求
                 final Request<?> request = mCacheQueue.take();
                 request.addMarker("cache-queue-take");
 
@@ -96,16 +80,16 @@ public class CacheDispatcher extends Thread {
                     continue;
                 }
 
-                // Attempt to retrieve this item from cache. 从缓存中取出数据
+                //  从缓存中取出数据
                 Cache.Entry entry = mCache.get(request.getCacheKey());
                 if (entry == null) {
                     request.addMarker("cache-miss");
-                    // Cache miss; send off to the network dispatcher.没有命中，就将请求放入网络
+                    // .没有命中，就将请求放入网络
                     mNetworkQueue.put(request);
                     continue;
                 }
 
-                // If it is completely expired, just send it to the network. 如果已经过期，将请求放入网络队列
+                //  如果已经过期，将请求放入网络队列
                 if (entry.isExpired()) {
                     request.addMarker("cache-hit-expired");
                     request.setCacheEntry(entry);
@@ -113,34 +97,26 @@ public class CacheDispatcher extends Thread {
                     continue;
                 }
 
-                // We have a cache hit; parse its data for delivery back to the request. 本地命中
+                // 本地命中
                 request.addMarker("cache-hit");
                 Response<?> response = request.parseNetworkResponse(
                         new NetworkResponse(entry.data, entry.responseHeaders));
                 request.addMarker("cache-hit-parsed");
 
                 if (!entry.refreshNeeded()) {
-                    // Completely unexpired cache hit. Just deliver the response.命中并且不需要刷新
+                    //.命中并且不需要刷新
                     mDelivery.postResponse(request, response);
                 } else {
-                    // Soft-expired cache hit. We can deliver the cached response,命中 需要刷新
-                    // but we need to also send the request to the network for将请求放入网络队列
-                    // refreshing.
+                    // 命中 需要刷新，将请求放入网络队列
                     request.addMarker("cache-hit-refresh-needed");
-                    request.setCacheEntry(entry);
-
-                    // Mark the response as intermediate.
+                    request.setCacheEntry(entry);//先把entry暂存，如果发现数据一样的话就直接取这个值
                     response.intermediate = true;
-
-                    // Post the intermediate response back to the user and have
-                    // the delivery then forward the request along to the network.
                     mDelivery.postResponse(request, response, new Runnable() {
                         @Override
                         public void run() {
                             try {
                                 mNetworkQueue.put(request);
                             } catch (InterruptedException e) {
-                                // Not much we can do about this.
                             }
                         }
                     });

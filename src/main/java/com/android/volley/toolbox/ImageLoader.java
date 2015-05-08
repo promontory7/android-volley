@@ -54,11 +54,15 @@ public class ImageLoader {
     /**
      * HashMap of Cache keys -> BatchedImageRequest used to track in-flight requests so
      * that we can coalesce multiple requests to the same URL into a single network request.
+     * 用于存放具有相同cacheKey的请求
      */
     private final HashMap<String, BatchedImageRequest> mInFlightRequests =
             new HashMap<String, BatchedImageRequest>();
 
-    /** HashMap of the currently pending responses (waiting to be delivered). */
+    /**
+     * HashMap of the currently pending responses (waiting to be delivered).
+     * 用于存放具有相同的Key，并且返回了数据的请求
+     */
     private final HashMap<String, BatchedImageRequest> mBatchedResponses =
             new HashMap<String, BatchedImageRequest>();
 
@@ -92,9 +96,9 @@ public class ImageLoader {
      * The default implementation of ImageListener which handles basic functionality
      * of showing a default image until the network response is received, at which point
      * it will switch to either the actual image or the error image.
-     * @param view The imageView that the listener is associated with.
-     * @param defaultImageResId Default image resource ID to use, or 0 if it doesn't exist.
-     * @param errorImageResId Error image resource ID to use, or 0 if it doesn't exist.
+     * @param view The imageView that the listener is associated with. 需要设置图片的ImageView
+     * @param defaultImageResId Default image resource ID to use, or 0 if it doesn't exist.  默认图片
+     * @param errorImageResId Error image resource ID to use, or 0 if it doesn't exist.  出错图片
      *
      * 用于图片获取成功或者失败的回调
      */
@@ -463,7 +467,8 @@ public class ImageLoader {
      * @param cacheKey The cacheKey of the response being delivered.
      * @param request The BatchedImageRequest to be delivered.
      *
-     *当请求返回后，将BatchedImageRequest放入到mBatchRequeses，然后将结果发送给具有相同key的ImageContainer,ImageContainer通过Listener发送到ImageView，从而显示出来
+     *当请求返回后，将BatchedImageRequest放入到mBatchRequeses，
+     *然后将结果发送给具有相同key的ImageContainer,ImageContainer通过Listener发送到ImageView，从而显示出来
      */
     private void batchResponse(String cacheKey, BatchedImageRequest request) {
         mBatchedResponses.put(cacheKey, request);

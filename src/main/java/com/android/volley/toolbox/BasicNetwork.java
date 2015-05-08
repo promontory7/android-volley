@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley.toolbox;
 
 import android.os.SystemClock;
@@ -51,7 +35,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * A network performing Volley requests over an {@link HttpStack}.
+ * 处理网络请求封装类的实现类
+ * 利用httpstack执行网络请求
+ * 如果request中带有实体信息，如Etag Last_Modify 等，则进行缓存新鲜度的验证，并处理304响应
+ * 如果发送超时，认证失败等错误，进行重试操作，直到成功 抛出异常为止
  */
 public class BasicNetwork implements Network {
     protected static final boolean DEBUG = VolleyLog.DEBUG;
@@ -60,16 +47,12 @@ public class BasicNetwork implements Network {
 
     private static int DEFAULT_POOL_SIZE = 4096;
 
-    protected final HttpStack mHttpStack;
+    protected final HttpStack mHttpStack; //用于处理HTTP的网络请求类
 
     protected final ByteArrayPool mPool;
 
-    /**
-     * @param httpStack HTTP stack to be used
-     */
+
     public BasicNetwork(HttpStack httpStack) {
-        // If a pool isn't passed in, then build a small default pool that will give us a lot of
-        // benefit and not use too much memory.
         this(httpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
     }
 
@@ -84,7 +67,7 @@ public class BasicNetwork implements Network {
 
     @Override
     public NetworkResponse performRequest(Request<?> request) throws VolleyError {
-        long requestStart = SystemClock.elapsedRealtime();
+        long requestStart = SystemClock.elapsedRealtime();// // 从开机到现在的毫秒数（手机睡眠(sleep)的时间也包括在内）
         while (true) {
             HttpResponse httpResponse = null;
             byte[] responseContents = null;
@@ -96,9 +79,10 @@ public class BasicNetwork implements Network {
                 httpResponse = mHttpStack.performRequest(request, headers);
                 StatusLine statusLine = httpResponse.getStatusLine();
                 int statusCode = statusLine.getStatusCode();
-
                 responseHeaders = convertHeaders(httpResponse.getAllHeaders());
-                // Handle cache validation.
+
+
+                // Handle cache validation.数据没有修改
                 if (statusCode == HttpStatus.SC_NOT_MODIFIED) {
 
                     Entry entry = request.getCacheEntry();
@@ -107,33 +91,22 @@ public class BasicNetwork implements Network {
                                 responseHeaders, true,
                                 SystemClock.elapsedRealtime() - requestStart);
                     }
-
-                    // A HTTP 304 response does not have all header fields. We
-                    // have to use the header fields from the cache entry plus
-                    // the new ones from the response.
-                    // http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5
                     entry.responseHeaders.putAll(responseHeaders);
                     return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED, entry.data,
                             entry.responseHeaders, true,
                             SystemClock.elapsedRealtime() - requestStart);
                 }
-                
-                // Handle moved resources
+
+                //  判断页面返回状态判断是否进行转向抓取新链接
                 if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY || statusCode == HttpStatus.SC_MOVED_TEMPORARILY) {
                 	String newUrl = responseHeaders.get("Location");
                 	request.setRedirectUrl(newUrl);
                 }
-
-                // Some responses such as 204s do not have content.  We must check.
                 if (httpResponse.getEntity() != null) {
                   responseContents = entityToBytes(httpResponse.getEntity());
                 } else {
-                  // Add 0 byte response as a way of honestly representing a
-                  // no-content request.
                   responseContents = new byte[0];
                 }
-
-                // if the request is slow, log it.
                 long requestLifetime = SystemClock.elapsedRealtime() - requestStart;
                 logSlowRequests(requestLifetime, request, responseContents, statusLine);
 
@@ -218,7 +191,6 @@ public class BasicNetwork implements Network {
     }
 
     private void addCacheHeaders(Map<String, String> headers, Cache.Entry entry) {
-        // If there's no cache entry, we're done.
         if (entry == null) {
             return;
         }
@@ -238,7 +210,6 @@ public class BasicNetwork implements Network {
         VolleyLog.v("HTTP ERROR(%s) %d ms to fetch %s", what, (now - start), url);
     }
 
-    /** Reads the contents of HttpEntity into a byte[]. */
     private byte[] entityToBytes(HttpEntity entity) throws IOException, ServerError {
         PoolingByteArrayOutputStream bytes =
                 new PoolingByteArrayOutputStream(mPool, (int) entity.getContentLength());
@@ -269,7 +240,7 @@ public class BasicNetwork implements Network {
     }
 
     /**
-     * Converts Headers[] to Map<String, String>.
+     * 把 Headers[] 转换成 Map<String, String>.
      */
     protected static Map<String, String> convertHeaders(Header[] headers) {
         Map<String, String> result = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);

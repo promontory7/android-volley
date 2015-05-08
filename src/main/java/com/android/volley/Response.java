@@ -20,6 +20,7 @@ package com.android.volley;
  * Encapsulates a parsed response for delivery.
  *
  * @param <T> Parsed type of this response
+ *           封装了经过解析后的数据，用于传输
  */
 public class Response<T> {
 

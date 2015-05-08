@@ -27,6 +27,7 @@ import java.util.Map;
 
 /**
  * Utility methods for parsing HTTP headers.
+ * Http Header的解析工具类，在volley中主要作用是用于解析Header从而判断返回结果是否需要缓存，如果需要返回Header中相关信息
  */
 public class HttpHeaderParser {
 
@@ -35,6 +36,8 @@ public class HttpHeaderParser {
      *
      * @param response The network response to parse headers from
      * @return a cache entry for the given response, or null if the response is not cacheable.
+     *
+     * 通过网络响应中的缓存控制Header和Body内容，构建缓存实体。如果Header的Cache-Control字段含有no-cache/no-store表示不缓存，返回null
      */
     public static Cache.Entry parseCacheHeaders(NetworkResponse response) {
         long now = System.currentTimeMillis();
@@ -54,11 +57,13 @@ public class HttpHeaderParser {
         String serverEtag = null;
         String headerValue;
 
+        //获取响应生成时间
         headerValue = headers.get("Date");
         if (headerValue != null) {
             serverDate = parseDateAsEpoch(headerValue);
         }
 
+        //计算出缓存过期时间
         headerValue = headers.get("Cache-Control");
         if (headerValue != null) {
             hasCacheControl = true;
@@ -83,6 +88,7 @@ public class HttpHeaderParser {
             }
         }
 
+        //缓存新鲜度时间
         headerValue = headers.get("Expires");
         if (headerValue != null) {
             serverExpires = parseDateAsEpoch(headerValue);
@@ -140,6 +146,8 @@ public class HttpHeaderParser {
      * @param defaultCharset Charset to return if none can be found
      * @return Returns the charset specified in the Content-Type of this header,
      * or the defaultCharset if none can be found.
+     *
+     * 解析编码集，在Content-Type首部中获取编码集，如果没有找到，默认返回ISO-8859-1
      */
     public static String parseCharset(Map<String, String> headers, String defaultCharset) {
         String contentType = headers.get(HTTP.CONTENT_TYPE);

@@ -23,15 +23,17 @@ import java.util.Map;
 
 /**
  * Data and headers returned from {@link Network#performRequest(Request)}.
+ * 网络请求的返回值，是内部response转换的一级
+ * 封装了网络请求响应的StatusCode   Headers   Body
  */
 public class NetworkResponse {
     /**
      * Creates a new network response.
-     * @param statusCode the HTTP status code
-     * @param data Response body
-     * @param headers Headers returned with this response, or null for none
-     * @param notModified True if the server returned a 304 and the data was already in cache
-     * @param networkTimeMs Round-trip network time to receive network response
+     * @param statusCode the HTTP status code  http响应状态码
+     * @param data Response body 数据
+     * @param headers Headers returned with this response, or null for none   响应Headers
+     * @param notModified True if the server returned a 304 and the data was already in cache  表示是是否为304响应  （自从上次请求后，请求的网页未修改过
+     * @param networkTimeMs Round-trip network time to receive network response  请求耗时
      */
     public NetworkResponse(int statusCode, byte[] data, Map<String, String> headers,
             boolean notModified, long networkTimeMs) {

@@ -20,6 +20,7 @@ import android.content.Intent;
 
 /**
  * Error indicating that there was an authentication failure when performing a Request.
+ * 请求认证失败的错误
  */
 @SuppressWarnings("serial")
 public class AuthFailureError extends VolleyError {

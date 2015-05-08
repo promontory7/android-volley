@@ -1,21 +1,4 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley;
-
 import android.annotation.TargetApi;
 import android.net.TrafficStats;
 import android.os.Build;
@@ -25,33 +8,28 @@ import android.os.SystemClock;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Provides a thread for performing network dispatch from a queue of requests.
- *
- * Requests added to the specified queue are processed from the network via a
- * specified {@link Network} interface. Responses are committed to cache, if
- * eligible, using a specified {@link Cache} interface. Valid responses and
- * errors are posted back to the caller via a {@link ResponseDelivery}.
+ * 网络线程数组
  */
 public class NetworkDispatcher extends Thread {
-    /** The queue of requests to service.网络队列 */
+    /**
+     * 网络队列
+     */
     private final BlockingQueue<Request<?>> mQueue;
-    /** The network interface for processing requests.网络请求 */
+    /**
+     * 网络请求封装类
+     */
     private final Network mNetwork;
-    /** The cache to write to. 网络请求后，放入的缓存*/
+    /**
+     * 网络请求后，放入的缓存
+     */
     private final Cache mCache;
-    /** For posting responses and errors. */
+    /**
+     * 请求结果分发类 */
     private final ResponseDelivery mDelivery;
-    /** Used for telling us to die. */
     private volatile boolean mQuit = false;
 
     /**
-     * Creates a new network dispatcher thread.  You must call {@link #start()}
-     * in order to begin processing.
-     *
-     * @param queue Queue of incoming requests for triage
-     * @param network Network interface to use for performing requests
-     * @param cache Cache interface to use for writing responses to cache
-     * @param delivery Delivery interface to use for posting responses
+     * 创建网络线程实例类
      */
     public NetworkDispatcher(BlockingQueue<Request<?>> queue,
             Network network, Cache cache,
@@ -62,10 +40,7 @@ public class NetworkDispatcher extends Thread {
         mDelivery = delivery;
     }
 
-    /**
-     * Forces this dispatcher to quit immediately.  If any requests are still in
-     * the queue, they are not guaranteed to be processed.
-     */
+
     public void quit() {
         mQuit = true;
         interrupt();
@@ -75,7 +50,7 @@ public class NetworkDispatcher extends Thread {
     private void addTrafficStatsTag(Request<?> request) {
         // Tag the request (if API >= 14)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            TrafficStats.setThreadStatsTag(request.getTrafficStatsTag());
+            TrafficStats.setThreadStatsTag(request.getTrafficStatsTag());//人工地标记或者取消标记
         }
     }
 
@@ -98,27 +73,18 @@ public class NetworkDispatcher extends Thread {
 
             try {
                 request.addMarker("network-queue-take");
-
-                // If the request was cancelled already, do not perform the
-                // network request.
                 if (request.isCanceled()) {
                     request.finish("network-discard-cancelled");
                     continue;
                 }
-
                 addTrafficStatsTag(request);
-
-                // Perform the network request.
                 NetworkResponse networkResponse = mNetwork.performRequest(request);
                 request.addMarker("network-http-complete");
-
-                // If the server returned 304 AND we delivered a response already,如果已经把返回结果发给UI
-                // we're done -- don't deliver a second identical response.
+                // 如果已经把返回结果发给UI
                 if (networkResponse.notModified && request.hasHadResponseDelivered()) {
                     request.finish("not-modified");
                     continue;
                 }
-
                 // Parse the response here on the worker thread.
                 Response<?> response = request.parseNetworkResponse(networkResponse);
                 request.addMarker("network-parse-complete");

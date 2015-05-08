@@ -28,6 +28,7 @@ import java.util.Locale;
  * <p/>
  * to see Volley logs call:<br/>
  * {@code <android-sdk>/platform-tools/adb shell setprop log.tag.Volley VERBOSE}
+ * Volley的Log工具类
  */
 public class VolleyLog {
     public static String TAG = "Volley";

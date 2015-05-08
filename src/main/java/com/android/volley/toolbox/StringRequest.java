@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley.toolbox;
 
 import com.android.volley.NetworkResponse;
@@ -25,18 +9,17 @@ import com.android.volley.Response.Listener;
 import java.io.UnsupportedEncodingException;
 
 /**
- * A canned request for retrieving the response body at a given URL as a String.
+ * String请求实例
  */
 public class StringRequest extends Request<String> {
     private final Listener<String> mListener;
 
     /**
-     * Creates a new request with the given method.
-     *
-     * @param method the request {@link Method} to use
-     * @param url URL to fetch the string at
-     * @param listener Listener to receive the String response
-     * @param errorListener Error listener, or null to ignore errors
+     * 创建一个String请求实例
+     * @param method 请求方式
+     * @param url URL
+     * @param listener 请求结果监听器
+     * @param errorListener 请求错误监听器
      */
     public StringRequest(int method, String url, Listener<String> listener,
             ErrorListener errorListener) {
@@ -45,11 +28,7 @@ public class StringRequest extends Request<String> {
     }
 
     /**
-     * Creates a new GET request.
-     *
-     * @param url URL to fetch the string at
-     * @param listener Listener to receive the String response
-     * @param errorListener Error listener, or null to ignore errors
+     * 创建一个GET请求
      */
     public StringRequest(String url, Listener<String> listener, ErrorListener errorListener) {
         this(Method.GET, url, listener, errorListener);
